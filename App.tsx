@@ -9,6 +9,8 @@ import {useFonts, NunitoSans_400Regular, NunitoSans_700Bold} from '@expo-google-
 
 import { Loading } from './src/components/Loading';
 
+import { MealsListContextProvider } from "./src/contexts/MealsContext";
+
 export default function App() {
   const [fontsLoaded] = useFonts({ NunitoSans_400Regular, NunitoSans_700Bold })
 
@@ -19,8 +21,10 @@ export default function App() {
         backgroundColor="transparent"
         translucent
       />
- 
-      { fontsLoaded ? <Routes /> : <Loading />}
+
+      <MealsListContextProvider>
+        { fontsLoaded ? <Routes /> : <Loading />}
+      </MealsListContextProvider>
     </ThemeProvider>
   ) 
     

@@ -1,4 +1,8 @@
-import { View,Text} from 'react-native'
+import { View,Text} from 'react-native';
+
+import { useForm } from "react-hook-form";
+import * as yup from "yup";
+import { yupResolver } from "@hookform/resolvers/yup";
 
 import { useTheme } from 'styled-components';
 
@@ -11,6 +15,8 @@ import { YesOrNotButton } from '../YesOrNotButton';
 
 export function NewMealForm(){
     const {FONT_FAMILY, COLORS} = useTheme()
+
+    const { register, handleSubmit, formState: { errors }, reset } = useForm();
 
     const navigation = useNavigation()
 
