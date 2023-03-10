@@ -1,4 +1,4 @@
-import { Text, SectionList, View } from "react-native";
+import { Text, SectionList, Pressable } from "react-native";
 
 import { useNavigation } from "@react-navigation/native";
 import { useTheme } from "styled-components";
@@ -13,6 +13,9 @@ import { useMealList } from "./../../hooks/useMealList";
 
 import { MealInfo } from "./../../components/MealInfo";
 
+import { MealProps } from "./../../contexts/MealsContext"
+import { View } from "react-native";
+
 export function Home(){
     const { COLORS, FONT_FAMILY, FONT_SIZE} = useTheme()
 
@@ -24,6 +27,15 @@ export function Home(){
         navigation.navigate('registernewmeal')
     }
 
+    function openMealDetail(item : MealProps){
+        navigation.navigate('meal', {
+            description: item.description,
+            hour: item.hour,
+            isOnDiet: item.isOnDiet,
+            name: item.name,
+        })
+    }
+
     return (
         <HomeContainer>  
             <HomeHeader />
@@ -33,7 +45,9 @@ export function Home(){
                 fontSize: FONT_SIZE.MD,
                 marginBottom: 8
             }}>Refeições</Text>
-            <BlackButton handlePress={addNewMeal} value="+ Nova Refeição"/>
+            <View style={{marginBottom: 20}}>
+                <BlackButton handlePress={addNewMeal} value="+ Nova Refeição"/>
+            </View>
 
             <SectionList 
                 sections={mealList.map(({ date, meals }) => ({
@@ -42,9 +56,9 @@ export function Home(){
                   }))}
                 keyExtractor={(item, index) => item.hour + item.name + index}
                 renderItem={({ item }) => (
-                    <View style={{marginBottom: 8}}>
+                    <Pressable style={{marginBottom: 8}} onPress={() => openMealDetail(item)}>
                         <MealInfo name={item.name} hour={item.hour} isOnDiet={item.isOnDiet}/>
-                    </View>
+                    </Pressable>
                 )}
                 renderSectionHeader={({ section: { title } }) => (
                     <DateTitle>{title}</DateTitle>
