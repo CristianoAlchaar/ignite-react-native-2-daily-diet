@@ -7,6 +7,7 @@ import { Meal } from '../screens/Meal'
 import { RegisterMealConclusion } from '../screens/RegisterMealConclusion'
 import { RegisterNewMeal } from '../screens/RegisterNewMeal'
 import { DietDataScreen } from '../screens/DietDataScreen'
+import { EditMeal } from '../screens/EditMeal'
 
 export function AppRoutes(){
     return(
@@ -31,6 +32,10 @@ export function AppRoutes(){
             <Screen 
                 name= "registermealconclusion"
                 component={RegisterMealConclusion}
+            />
+            <Screen 
+                name= "editmeal"
+                component={EditMeal}
             />
         </Navigator>
     )

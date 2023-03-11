@@ -11,6 +11,12 @@ export declare global{
             dietdata: undefined;
             registernewmeal: undefined;
             registermealconclusion: {isMealOnDiet : boolean};
+            editmeal: {
+                name: string;
+                description: string;
+                hour: string;
+                isOnDiet: boolean;
+            }
         }
     }
 }

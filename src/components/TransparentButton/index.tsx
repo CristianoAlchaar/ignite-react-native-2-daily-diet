@@ -12,7 +12,7 @@ export function TransparentButton({value, handlePress, } : BlackButtonProps){
     const { COLORS, FONT_FAMILY } = useTheme()
 
     return (
-        <ButtonContainer onPress={handlePress} underlayColor={COLORS["GRAY-900"]}>
+        <ButtonContainer onPress={handlePress} underlayColor={COLORS["GRAY-400"]}>
             <Text style={{
                 fontFamily: FONT_FAMILY.REGULAR,
             }}>{value}</Text>

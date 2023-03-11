@@ -1,5 +1,7 @@
 import { useRoute } from "@react-navigation/native";
-import { View } from "react-native";
+import { Alert, View } from "react-native";
+
+import { useNavigation } from "@react-navigation/native";
 
 import { ScreenTemplate } from "./../../components/ScreenTemplate";
 import { DietTag } from "./../../components/DietTag"
@@ -20,12 +22,37 @@ export function Meal(){
 
     const {description, hour, isOnDiet, name} = route.params as RouteParams
     
+    const navigation = useNavigation()
+
     function handleEditMeal(){
-        console.log("Edit")
+        navigation.navigate("editmeal", {
+            description,
+            hour,
+            isOnDiet,
+            name,
+        })
     }
 
     function handleDeleteMeal(){
-        console.log("Delete")
+        return Alert.alert(
+            "",
+            "Deseja realmente excluir o registro da refeição?",
+            [
+              {
+                text: "Cancelar",
+                onPress: () => {
+                  console.log("Cancelar");
+                },
+                style: "cancel"
+              },
+              {
+                text: "Sim, excluir",
+                onPress: () => {
+                    console.log('Excluir')
+                },
+              },
+            ]
+          );
     }
 
     return (
