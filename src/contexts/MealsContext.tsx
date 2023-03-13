@@ -1,5 +1,7 @@
 import { createContext, ReactNode, useState } from "react";
 
+import { getMealsList } from "./../storage/mealList/getMealsList"
+
 export interface MealProps {
     hour: string,
     name: string,
@@ -7,7 +9,7 @@ export interface MealProps {
     isOnDiet: boolean,
 }
 
-interface DateProps{
+export interface DateProps{
     date: string,
     meals : MealProps[],
 }
@@ -22,6 +24,7 @@ interface MealsListContextProviderProps {
 
 interface MealsListContextProps{
     mealList: DateProps[],
+    loadList: () => void,
 }
 
 export const MealListContext = createContext<MealsListContextProps>({} as MealsListContextProps)
@@ -123,12 +126,22 @@ const temporaryList : DateProps[] = [
 ]
 
 export function MealsListContextProvider({children} : MealsListContextProviderProps){
-    const [list, setList] = useState<DateProps[]>(temporaryList)
+    const [list, setList] = useState<DateProps[]>([])
     
-    //im not sending object, i will text
+    async function loadList(){
+        try{
+            const list = await getMealsList()
+            
+            setList(list)
+        }catch(error){
+            throw error
+        }
+    }
+
     return(
         <MealListContext.Provider value={{
             mealList: list,
+            loadList
         }}>
             {children}
         </MealListContext.Provider>

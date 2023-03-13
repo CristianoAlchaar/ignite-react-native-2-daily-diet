@@ -43,6 +43,7 @@ export const DescriptionInput = styled.TextInput`
     color:  ${({theme}) => theme.COLORS["GRAY-900"]};
 
     margin-bottom: 24px;
+    vertical-align: top;
 `
 
 export const SmallInput = styled.TextInput`
@@ -67,4 +68,17 @@ export const Line = styled.View`
 export const LineColumn = styled.View`
     flex-direction: column;
     gap: 4px;
+`
+
+export const ErrorContainer = styled.Text`
+    color:  ${({theme}) => theme.COLORS.RED_DARK};
+    margin-top: -24px;
+    flex-wrap: wrap;
+`
+
+export const SmallErrorContainer = styled.Text`
+    color:  ${({theme}) => theme.COLORS.RED_DARK};
+    margin-top: -24px;
+    max-width: 154px;
+    flex-wrap: wrap;
 `
