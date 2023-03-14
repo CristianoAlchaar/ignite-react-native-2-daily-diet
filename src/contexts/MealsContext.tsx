@@ -30,6 +30,7 @@ interface MealsListContextProps{
     loadList: () => void,
     addMeal: ({date, meals} : DateProps) => void,
     deleteMeal: (date : string, mealToBeRemoved : MealProps) => void,
+    editMeal: (dateMealToBeDeleted: string, mealToBeDeleted: MealProps, dateMealToBeAdded: string, mealToBeAdded: MealProps) => void,
 }
 
 export const MealListContext = createContext<MealsListContextProps>({} as MealsListContextProps)
@@ -245,12 +246,42 @@ export function MealsListContextProvider({children} : MealsListContextProviderPr
         }
     }
 
+    async function editMeal(dateMealToBeDeleted: string, mealToBeDeleted: MealProps, dateMealToBeAdded: string, mealToBeAdded: MealProps){
+
+        try{
+            //REMOVE    
+            const dayIndex = list.findIndex((day) => day.date === dateMealToBeDeleted)
+            
+            const day = list[dayIndex]
+
+            const mealIndex = day.meals.findIndex((meal) => isEqual(meal, mealToBeDeleted));
+
+            const updatedMeals = [...day.meals.slice(0, mealIndex), ...day.meals.slice(mealIndex + 1)]
+
+            const updatedDay = {
+                ...day,
+                meals: updatedMeals,
+            }
+
+            const updatedListWithRemovedOne = [...list.slice(0, dayIndex), updatedDay, ...list.slice(dayIndex + 1)]
+
+            setList(updatedListWithRemovedOne)
+
+            //ADD MEAL WITH MODIFICATIONS
+            addMeal({date: dateMealToBeAdded, meals: [ mealToBeAdded ]})
+            
+        } catch (error){
+            throw error
+        }
+    }
+
     return(
         <MealListContext.Provider value={{
             mealList: list,
             loadList,
             addMeal,
             deleteMeal,
+            editMeal,
         }}>
             {children}
         </MealListContext.Provider>

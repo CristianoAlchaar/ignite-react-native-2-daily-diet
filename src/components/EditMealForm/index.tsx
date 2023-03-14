@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { View,Text} from 'react-native';
+import { useContext, useState } from 'react'
+import { View,Text, Alert} from 'react-native';
 
 import { useForm, Controller } from "react-hook-form";
 import * as yup from "yup";
@@ -27,20 +27,23 @@ interface EditMealFormProps{
     }
 }
 
-const schema = yup.object().shape({
-    name: yup.string().max(30).required('O nome precisa ser preenchido'),
-    description: yup.string().max(60).required('A descrição precisa ser preenchida'),
-    date: yup
-        .string()
-        .matches(/^[0-3][0-9]\/[01][0-9]\/[0-9]{4}$/, 'O formato deve ser dd/mm/aaaa')
-        .required('A data deve ser preenchida'),
-    hour: yup
-        .string()
-        .matches(/^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$/, 'O formato deve ser hh:mm')
-        .required('A hora deve ser preenchida'),
-})
-
 export function EditMealForm({date, meal}: EditMealFormProps){
+
+    const schema = yup.object().shape({
+        newName: yup.string().max(30).required('O nome precisa ser preenchido').default(meal.name),
+        newDescription: yup.string().max(60).required('A descrição precisa ser preenchida').default(meal.description),
+        newDate: yup
+            .string()
+            .matches(/^[0-3][0-9]\/[01][0-9]\/[0-9]{4}$/, 'O formato deve ser dd/mm/aaaa')
+            .required('A data deve ser preenchida')
+            .default(date),
+        newHour: yup
+            .string()
+            .matches(/^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$/, 'O formato deve ser hh:mm')
+            .required('A hora deve ser preenchida')
+            .default(meal.hour),
+    })
+
     const route = useRoute()
 
     const {FONT_FAMILY, COLORS} = useTheme()
@@ -49,7 +52,7 @@ export function EditMealForm({date, meal}: EditMealFormProps){
     const [noSelected, setNoSelected] = useState(false);
     const [isOnDiet, setIsOnDiet] = useState(meal.isOnDiet);
 
-    //const { addMeal } = useContext(MealListContext)
+    const { editMeal } = useContext(MealListContext)
 
     const { control, handleSubmit, formState: { errors } } = useForm({
         resolver: yupResolver(schema)
@@ -57,7 +60,18 @@ export function EditMealForm({date, meal}: EditMealFormProps){
 
     const navigation = useNavigation()
 
-    function submitMeal(){
+    function submitMeal(data: any){
+        try{
+            editMeal(date, meal, data.newDate, {
+                description: data.newDescription,
+                hour: data.newHour,
+                isOnDiet: isOnDiet,
+                name: data.newName
+            })
+        }catch(error){
+            console.log(error)
+            Alert.alert('Falha', 'Não foi possível modificar a refeição.')
+        }
         //navigation.navigate('meal', {description, hour, isOnDiet, name})
     }
 
@@ -82,7 +96,7 @@ export function EditMealForm({date, meal}: EditMealFormProps){
             <Label>Nome</Label>
             <Controller 
                 control={control}
-                name="name"
+                name="newName"
                 render={
                     ({ field : {value, onChange}}) => (
                     <NameInput 
@@ -94,14 +108,14 @@ export function EditMealForm({date, meal}: EditMealFormProps){
             />
             <ErrorMessage
                 errors={errors}
-                name="name"
+                name="newName"
                 render={({ message }) => <ErrorContainer>{message}</ErrorContainer>}
             />
             
             <Label>Descrição</Label>
             <Controller 
                 control={control}
-                name="description"
+                name="newDescription"
                 render={({ field : {value, onChange}}) => (
                     <DescriptionInput 
                         onChangeText={onChange}
@@ -112,7 +126,7 @@ export function EditMealForm({date, meal}: EditMealFormProps){
             />
             <ErrorMessage
                 errors={errors}
-                name="description"
+                name="newDescription"
                 render={({ message }) => <ErrorContainer>{message}</ErrorContainer>}
             />
 
@@ -121,7 +135,7 @@ export function EditMealForm({date, meal}: EditMealFormProps){
                     <Label>Data</Label>
                     <Controller 
                         control={control}
-                        name="date"
+                        name="newDate"
                         render={({ field : {value, onChange}}) => (
                             <SmallInput 
                                 onChangeText={onChange}
@@ -132,7 +146,7 @@ export function EditMealForm({date, meal}: EditMealFormProps){
                     />
                     <ErrorMessage
                         errors={errors}
-                        name="date"
+                        name="newDate"
                         render={({ message }) => <SmallErrorContainer>{message}</SmallErrorContainer>}
                     />
                     
@@ -141,7 +155,7 @@ export function EditMealForm({date, meal}: EditMealFormProps){
                     <Label>Hora</Label>
                     <Controller 
                         control={control}
-                        name="hour"
+                        name="newHour"
                         render={({ field : {value, onChange}}) => (
                             <SmallInput 
                                 onChangeText={onChange}
@@ -152,7 +166,7 @@ export function EditMealForm({date, meal}: EditMealFormProps){
                     />
                     <ErrorMessage
                         errors={errors}
-                        name="hour"
+                        name="newHour"
                         render={({ message }) => <SmallErrorContainer>{message}</SmallErrorContainer>}
                     />
                 </LineColumn>
