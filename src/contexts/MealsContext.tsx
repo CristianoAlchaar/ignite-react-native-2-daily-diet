@@ -265,11 +265,30 @@ export function MealsListContextProvider({children} : MealsListContextProviderPr
 
             const updatedListWithRemovedOne = [...list.slice(0, dayIndex), updatedDay, ...list.slice(dayIndex + 1)]
 
-            setList(updatedListWithRemovedOne)
-
             //ADD MEAL WITH MODIFICATIONS
-            addMeal({date: dateMealToBeAdded, meals: [ mealToBeAdded ]})
+            const existingDayIndex = updatedListWithRemovedOne.findIndex((day) => day.date === dateMealToBeAdded); 
+        
+            if (existingDayIndex !== -1){
+                const updatedList = [...updatedListWithRemovedOne]
+                updatedList[existingDayIndex] = {
+                    ...updatedList[existingDayIndex],
+                    meals: [...updatedList[existingDayIndex].meals, ...[mealToBeAdded]],
+                }
+
+                sortMealsOnDay(existingDayIndex, updatedList)
+                
+            } else{
+                const newDay : DateProps = {
+                    date: dateMealToBeAdded,
+                    meals: [
+                        mealToBeAdded
+                    ]
+                }
+                const updatedList = [...updatedListWithRemovedOne, newDay]
             
+                sortDailyList(updatedList)
+            } 
+    
         } catch (error){
             throw error
         }
