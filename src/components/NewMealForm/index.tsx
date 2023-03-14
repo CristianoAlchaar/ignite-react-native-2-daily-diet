@@ -1,4 +1,5 @@
-import { View,Text} from 'react-native';
+import { useContext, useState } from 'react';
+import { View,Text,Alert } from 'react-native';
 
 import { useForm, Controller } from "react-hook-form";
 import * as yup from "yup";
@@ -8,6 +9,8 @@ import { ErrorMessage } from "@hookform/error-message"
 import { useTheme } from 'styled-components';
 
 import { useNavigation } from '@react-navigation/native';
+
+import { MealListContext, DateProps } from './../../contexts/MealsContext';
 
 import { 
     DescriptionInput, 
@@ -23,19 +26,28 @@ import {
 import { BlackButton } from '../BlackButton';
 import { YesOrNotButton } from '../YesOrNotButton';
 
+
 const schema = yup.object().shape({
     name: yup.string().max(30).required('O nome precisa ser preenchido'),
     description: yup.string().max(60).required('A descrição precisa ser preenchida'),
     date: yup
         .string()
-        .matches(/^[0-3][0-9]\/[01][0-9]\/[0-9]{4}$/, 'O formato deve ser dd/mm/aaaa'),
+        .matches(/^[0-3][0-9]\/[01][0-9]\/[0-9]{4}$/, 'O formato deve ser dd/mm/aaaa')
+        .required('A data deve ser preenchida'),
     hour: yup
         .string()
-        .matches(/^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$/, 'O formato deve ser hh:mm'),
+        .matches(/^(0[0-9]|1[0-9]|2[0-3]):[0-5][0-9]$/, 'O formato deve ser hh:mm')
+        .required('A hora deve ser preenchida'),
 })
 
 export function NewMealForm(){
     const {FONT_FAMILY, COLORS} = useTheme()
+    
+    const [yesSelected, setYesSelected] = useState(false);
+    const [noSelected, setNoSelected] = useState(false);
+    const [isOnDiet, setIsOnDiet] = useState<boolean>();
+
+    const { addMeal } = useContext(MealListContext)
 
     const { control, handleSubmit, formState: { errors } } = useForm({
         resolver: yupResolver(schema)
@@ -44,8 +56,35 @@ export function NewMealForm(){
     const navigation = useNavigation()
 
     function submitMeal(data : any){
-        console.log(data)
-        //navigation.navigate('registermealconclusion', {isMealOnDiet: true})
+        if(isOnDiet !== undefined){
+            const dataToSubmit : DateProps = {
+                date: data.date,
+                meals: [
+                    {
+                        description: data.description,
+                        hour: data.hour,
+                        isOnDiet: isOnDiet,
+                        name: data.name
+                    }
+                ]
+            }
+            addMeal(dataToSubmit)
+            navigation.navigate('registermealconclusion', {isMealOnDiet : isOnDiet})
+        }else{
+            Alert.alert('Está na dieta?', 'Por favor selecione se a refeição está dentro ou não da dieta.')
+        }
+    }
+
+    function handleYesSelect(){
+        setYesSelected(true)
+        setIsOnDiet(true)
+        setNoSelected(false)   
+    }
+
+    function handleNoSelect(){
+        setYesSelected(false)
+        setIsOnDiet(false)
+        setNoSelected(true)
     }
 
     return(
@@ -132,10 +171,10 @@ export function NewMealForm(){
             </Text>
             <Line>
                 <LineColumn>
-                    <YesOrNotButton buttonType='YES'/>
+                    <YesOrNotButton buttonType='YES' selected={yesSelected} onPress={handleYesSelect}/>
                 </LineColumn>
                 <LineColumn>
-                    <YesOrNotButton buttonType='NO'/>
+                    <YesOrNotButton buttonType='NO' selected={noSelected} onPress={handleNoSelect}/>
                 </LineColumn>
             </Line>
             

@@ -25,6 +25,7 @@ interface MealsListContextProviderProps {
 interface MealsListContextProps{
     mealList: DateProps[],
     loadList: () => void,
+    addMeal: ({date, meals} : DateProps) => void
 }
 
 export const MealListContext = createContext<MealsListContextProps>({} as MealsListContextProps)
@@ -130,18 +131,71 @@ export function MealsListContextProvider({children} : MealsListContextProviderPr
     
     async function loadList(){
         try{
-            const list = await getMealsList()
+            //const list = await getMealsList()
             
-            setList(list)
+            console.log('Loading')
+
+            //setList(list)
         }catch(error){
             throw error
         }
     }
 
+    async function addMeal({date, meals} : DateProps){ 
+
+        const existingDayIndex = list.findIndex((day) => day.date === date); 
+        
+        if (existingDayIndex !== -1){
+            const updatedList = [...list]
+            updatedList[existingDayIndex] = {
+                ...updatedList[existingDayIndex],
+                meals: [...updatedList[existingDayIndex].meals, ...meals],
+            }
+
+            sortMealsOnDay(existingDayIndex, updatedList)
+
+        } else{
+            const newDay = { date, meals }
+            const updatedList = [...list, newDay]
+           
+            sortDailyList(updatedList)
+        }
+    }
+
+    function sortDailyList( listToOrder : DateProps[]){
+        const updatedList = listToOrder.sort((a, b) => b.date.localeCompare(a.date))
+
+        setList(updatedList)
+    }
+
+    function sortMealsOnDay(index : number, listToOrder : DateProps[]){
+        // Sort meals on day by hour
+        const updatedDay = {
+            ...listToOrder[index],
+            meals: listToOrder[index].meals.sort((a, b) => {
+                //This value 2000-01-01T doesnt matter, 
+                //its just used so i can create a Date and check wich one came first
+                const timeA = new Date(`2000-01-01T${a.hour}`)
+                const timeB = new Date(`2000-01-01T${b.hour}`)
+                return timeB.getTime() - timeA.getTime()
+            }),
+          }
+        
+        const updatedList = [
+            ...listToOrder.slice(0, index),
+            updatedDay,
+            ...listToOrder.slice(index + 1),
+        ]
+        
+        //Updates the list with the modified day
+        setList(updatedList)
+    }
+
     return(
         <MealListContext.Provider value={{
             mealList: list,
-            loadList
+            loadList,
+            addMeal,
         }}>
             {children}
         </MealListContext.Provider>

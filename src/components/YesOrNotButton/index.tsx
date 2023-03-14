@@ -4,18 +4,15 @@ import { Container, Dot } from "./styles"
 
 interface YesOrNotButtonProps{
     buttonType: "YES" | "NO"
+    selected?: boolean
+    onPress?: () => void
 }
 
-export function YesOrNotButton({buttonType} : YesOrNotButtonProps){
-    const [isSelected, setIsSelected] = useState(false);
-
-    function changeSelected(){
-        isSelected ? setIsSelected(false) : setIsSelected(true)
-    }
-
+export function YesOrNotButton({buttonType, selected = false , onPress} : YesOrNotButtonProps){
+  
     return (
-        <Pressable onPress={changeSelected}>
-            <Container isSelected={isSelected} type={buttonType}>
+        <Pressable onPress={onPress}>
+            <Container isSelected={selected} type={buttonType}>
                 <Dot type={buttonType === "YES" ? "GREEN" : "RED"}/>
                 <Text>
                     {buttonType === "YES" ? "Sim" : "Não"}   
