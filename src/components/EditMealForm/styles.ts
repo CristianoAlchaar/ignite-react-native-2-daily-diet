@@ -43,6 +43,7 @@ export const DescriptionInput = styled.TextInput`
     color:  ${({theme}) => theme.COLORS["GRAY-900"]};
 
     margin-bottom: 24px;
+    vertical-align: top;
 `
 
 export const SmallInput = styled.TextInput`

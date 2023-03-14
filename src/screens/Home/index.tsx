@@ -30,12 +30,13 @@ export function Home(){
         navigation.navigate('registernewmeal')
     }
 
-    function openMealDetail(item : MealProps){
+    function openMealDetail(item : MealProps, title : string){
         navigation.navigate('meal', {
             description: item.description,
             hour: item.hour,
             isOnDiet: item.isOnDiet,
             name: item.name,
+            date: title,
         })
     }
 
@@ -75,8 +76,8 @@ export function Home(){
                         data: meals,
                     }))}
                     keyExtractor={(item, index) => item.hour + item.name + index}
-                    renderItem={({ item }) => (
-                        <Pressable style={{marginBottom: 8}} onPress={() => openMealDetail(item)}>
+                    renderItem={({ item, section: {title} }) => (
+                        <Pressable style={{marginBottom: 8}} onPress={() => openMealDetail(item, title)}> 
                             <MealInfo name={item.name} hour={item.hour} isOnDiet={item.isOnDiet}/>
                         </Pressable>
                     )}

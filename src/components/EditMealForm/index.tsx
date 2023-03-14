@@ -13,17 +13,18 @@ import { DescriptionInput, FormContainer, Label, NameInput, Line, SmallInput, Li
 import { BlackButton } from '../BlackButton';
 import { YesOrNotButton } from '../YesOrNotButton';
 
-interface RouteParams{
-    name: string;
-    description: string;
-    hour: string;
-    isOnDiet: boolean;
+interface EditMealFormProps{
+    date: string,
+    meal: {
+        name: string;
+        description: string;
+        hour: string;
+        isOnDiet: boolean;
+    }
 }
 
-export function EditMealForm(){
+export function EditMealForm({date, meal}: EditMealFormProps){
     const route = useRoute()
-
-    const {description, hour, isOnDiet, name} = route.params as RouteParams
 
     const {FONT_FAMILY, COLORS} = useTheme()
 
@@ -32,25 +33,25 @@ export function EditMealForm(){
     const navigation = useNavigation()
 
     function submitMeal(){
-        navigation.navigate('meal', {description, hour, isOnDiet, name})
+        //navigation.navigate('meal', {description, hour, isOnDiet, name})
     }
 
     return(
         <FormContainer>
             <Label>Nome</Label>
-            <NameInput value={name}/>
+            <NameInput value={meal.name}/>
 
             <Label>Descrição</Label>
-            <DescriptionInput value={description}/>
+            <DescriptionInput value={meal.description}/>
 
             <Line >
                 <LineColumn>
                     <Label>Data</Label>
-                    <SmallInput value='16/04/2023'/>
+                    <SmallInput value={date}/>
                 </LineColumn>
                 <LineColumn>
                     <Label>Hora</Label>
-                    <SmallInput value={hour}/>
+                    <SmallInput value={meal.hour}/>
                 </LineColumn>
             </Line>
 
@@ -61,7 +62,7 @@ export function EditMealForm(){
             </Text>
             <Line>
                 <LineColumn>
-                    <YesOrNotButton buttonType='YES'/>
+                    <YesOrNotButton buttonType='YES' />
                 </LineColumn>
                 <LineColumn>
                     <YesOrNotButton buttonType='NO'/>

@@ -1,6 +1,9 @@
 import { createContext, ReactNode, useState } from "react";
 
+import { isEqual } from 'lodash';
+
 import { getMealsList } from "./../storage/mealList/getMealsList"
+import { storeMealList } from "./../storage/mealList/storeMealList";
 
 export interface MealProps {
     hour: string,
@@ -25,7 +28,8 @@ interface MealsListContextProviderProps {
 interface MealsListContextProps{
     mealList: DateProps[],
     loadList: () => void,
-    addMeal: ({date, meals} : DateProps) => void
+    addMeal: ({date, meals} : DateProps) => void,
+    deleteMeal: (date : string, mealToBeRemoved : MealProps) => void,
 }
 
 export const MealListContext = createContext<MealsListContextProps>({} as MealsListContextProps)
@@ -131,11 +135,9 @@ export function MealsListContextProvider({children} : MealsListContextProviderPr
     
     async function loadList(){
         try{
-            //const list = await getMealsList()
+            const list = await getMealsList()
             
-            console.log('Loading')
-
-            //setList(list)
+            setList(list)
         }catch(error){
             throw error
         }
@@ -145,20 +147,24 @@ export function MealsListContextProvider({children} : MealsListContextProviderPr
 
         const existingDayIndex = list.findIndex((day) => day.date === date); 
         
-        if (existingDayIndex !== -1){
-            const updatedList = [...list]
-            updatedList[existingDayIndex] = {
-                ...updatedList[existingDayIndex],
-                meals: [...updatedList[existingDayIndex].meals, ...meals],
-            }
+        try{ 
+            if (existingDayIndex !== -1){
+                const updatedList = [...list]
+                updatedList[existingDayIndex] = {
+                    ...updatedList[existingDayIndex],
+                    meals: [...updatedList[existingDayIndex].meals, ...meals],
+                }
 
-            sortMealsOnDay(existingDayIndex, updatedList)
-
-        } else{
-            const newDay = { date, meals }
-            const updatedList = [...list, newDay]
-           
-            sortDailyList(updatedList)
+                sortMealsOnDay(existingDayIndex, updatedList)
+                
+            } else{
+                const newDay = { date, meals }
+                const updatedList = [...list, newDay]
+            
+                sortDailyList(updatedList)
+            } 
+        } catch(error){
+            throw error
         }
     }
 
@@ -166,6 +172,13 @@ export function MealsListContextProvider({children} : MealsListContextProviderPr
         const updatedList = listToOrder.sort((a, b) => b.date.localeCompare(a.date))
 
         setList(updatedList)
+
+        //StoreNewSortedList
+        try{
+            saveListChanges(updatedList)
+        }catch(error){
+            throw error
+        }
     }
 
     function sortMealsOnDay(index : number, listToOrder : DateProps[]){
@@ -189,6 +202,47 @@ export function MealsListContextProvider({children} : MealsListContextProviderPr
         
         //Updates the list with the modified day
         setList(updatedList)
+
+        //StoreNewSortedList
+        try{
+            saveListChanges(updatedList)
+        }catch(error){
+            throw error
+        }  
+    }
+
+    async function saveListChanges(listToSave : DateProps[]){
+        try{
+            await storeMealList(listToSave)
+        }
+        catch(error){
+            throw error
+        }
+    }
+
+    async function deleteMeal(date : string, mealToBeRemoved : MealProps){
+       
+        const dayIndex = list.findIndex((day) => day.date === date)
+        
+        const day = list[dayIndex]
+
+        const mealIndex = day.meals.findIndex((meal) => isEqual(meal, mealToBeRemoved));
+
+        const updatedMeals = [...day.meals.slice(0, mealIndex), ...day.meals.slice(mealIndex + 1)]
+
+        const updatedDay = {
+            ...day,
+            meals: updatedMeals,
+        }
+
+        const updatedList = [...list.slice(0, dayIndex), updatedDay, ...list.slice(dayIndex + 1)]
+
+        try{
+            saveListChanges(updatedList)
+            setList(updatedList)
+        }catch(error){
+            throw error
+        }
     }
 
     return(
@@ -196,6 +250,7 @@ export function MealsListContextProvider({children} : MealsListContextProviderPr
             mealList: list,
             loadList,
             addMeal,
+            deleteMeal,
         }}>
             {children}
         </MealListContext.Provider>

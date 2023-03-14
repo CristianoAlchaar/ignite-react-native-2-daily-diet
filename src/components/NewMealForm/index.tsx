@@ -68,8 +68,15 @@ export function NewMealForm(){
                     }
                 ]
             }
-            addMeal(dataToSubmit)
-            navigation.navigate('registermealconclusion', {isMealOnDiet : isOnDiet})
+
+            try{
+                addMeal(dataToSubmit)
+                navigation.navigate('registermealconclusion', {isMealOnDiet : isOnDiet})
+            } catch(error){
+                console.log(error)
+                Alert.alert('Falha no armazenamento','Não foi possível cadastrar a refeição')
+            }
+
         }else{
             Alert.alert('Está na dieta?', 'Por favor selecione se a refeição está dentro ou não da dieta.')
         }

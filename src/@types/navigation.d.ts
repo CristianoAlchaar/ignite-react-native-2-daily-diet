@@ -3,6 +3,7 @@ export declare global{
         interface RootParamList{
             home: undefined;
             meal: {
+                date: string;
                 name: string;
                 description: string;
                 hour: string;
@@ -12,6 +13,7 @@ export declare global{
             registernewmeal: undefined;
             registermealconclusion: {isMealOnDiet : boolean};
             editmeal: {
+                date: string;
                 name: string;
                 description: string;
                 hour: string;
