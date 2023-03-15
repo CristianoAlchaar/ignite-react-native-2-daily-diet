@@ -3,7 +3,10 @@ import { createContext, ReactNode, useState } from "react";
 import { isEqual } from 'lodash';
 
 import { getMealsList } from "./../storage/mealList/getMealsList"
-import { storeMealList } from "./../storage/mealList/storeMealList";
+import { storeMealList } from "./../storage/mealList/storeMealList"
+
+import { getDataAboutDiet } from "./../storage/dataAboutDiet/getDataAboutDiet"
+import { storeDataAboutDiet } from "./../storage/dataAboutDiet/storeDataAboutDiet"
 
 export interface MealProps {
     hour: string,
@@ -25,8 +28,18 @@ interface MealsListContextProviderProps {
     children: ReactNode
 }
 
+export interface DataAboutDietProps{
+    percentageInDiet: number,
+    currentSequenceOnDiet: number,
+    bestSequenceOndDiet: number,
+    totalRegisteredMeals: number,
+    mealsOnDiet: number,
+    mealsOutOfDiet: number,
+}
+
 interface MealsListContextProps{
     mealList: DateProps[],
+    dataAboutDiet: DataAboutDietProps,
     loadList: () => void,
     addMeal: ({date, meals} : DateProps) => void,
     deleteMeal: (date : string, mealToBeRemoved : MealProps) => void,
@@ -134,12 +147,26 @@ const temporaryList : DateProps[] = [
 
 export function MealsListContextProvider({children} : MealsListContextProviderProps){
     const [list, setList] = useState<DateProps[]>([])
+   
+    const [dataAboutDiet, setDataAboutDiet] = useState<DataAboutDietProps>({
+        bestSequenceOndDiet: 0,
+        currentSequenceOnDiet: 0,
+        mealsOnDiet: 0,
+        mealsOutOfDiet: 0,
+        percentageInDiet: 0,
+        totalRegisteredMeals: 0,
+    })
     
     async function loadList(){
         try{
             const list = await getMealsList()
             
+            const data = await getDataAboutDiet()
+
             setList(list)
+
+            setDataAboutDiet(data)
+
         }catch(error){
             throw error
         }
@@ -159,11 +186,15 @@ export function MealsListContextProvider({children} : MealsListContextProviderPr
 
                 sortMealsOnDay(existingDayIndex, updatedList)
                 
+                meals[0].isOnDiet ? addOnDietCount() : addOutDietCount()
+    
             } else{
                 const newDay = { date, meals }
                 const updatedList = [...list, newDay]
             
                 sortDailyList(updatedList)
+
+                meals[0].isOnDiet ? addOnDietCount() : addOutDietCount()
             } 
         } catch(error){
             throw error
@@ -241,7 +272,11 @@ export function MealsListContextProvider({children} : MealsListContextProviderPr
 
         try{
             saveListChanges(updatedList)
+
             setList(updatedList)
+
+            //UPDATE DataAboutDiet
+            mealToBeRemoved.isOnDiet ? removeOnDietCount() :  removeOutDietCount()
         }catch(error){
             throw error
         }
@@ -289,6 +324,9 @@ export function MealsListContextProvider({children} : MealsListContextProviderPr
             
                 sortDailyList(updatedList)
             } 
+
+            //editData about meal calling function
+            editDietData(mealToBeDeleted.isOnDiet, mealToBeAdded.isOnDiet)
     
         } catch (error){
             throw error
@@ -298,16 +336,153 @@ export function MealsListContextProvider({children} : MealsListContextProviderPr
     async function resetDiet(){
         try{ 
             const resetedList : DateProps[] = []
+            const resetedData : DataAboutDietProps = {
+                bestSequenceOndDiet: 0,
+                currentSequenceOnDiet: 0,
+                mealsOnDiet: 0,
+                mealsOutOfDiet: 0,
+                percentageInDiet: 0,
+                totalRegisteredMeals: 0,
+            }
+
             saveListChanges(resetedList)
+            storeDataAboutDiet(resetedData)
+
             setList(resetedList)
+            setDataAboutDiet(resetedData)
+
         }catch(error){
             throw(error)
+        }
+    }
+
+    async function addOnDietCount(){
+        const updatedDataAboutDiet = { ...dataAboutDiet } 
+
+        updatedDataAboutDiet.currentSequenceOnDiet += 1 
+
+        if(updatedDataAboutDiet.currentSequenceOnDiet > updatedDataAboutDiet.bestSequenceOndDiet){
+            updatedDataAboutDiet.bestSequenceOndDiet = updatedDataAboutDiet.currentSequenceOnDiet
+        }  
+
+        updatedDataAboutDiet.mealsOnDiet += 1
+
+        updatedDataAboutDiet.totalRegisteredMeals += 1
+
+        updatedDataAboutDiet.percentageInDiet = Number((((updatedDataAboutDiet.mealsOnDiet) / updatedDataAboutDiet.totalRegisteredMeals) * 100).toFixed(2))
+
+        try{
+            storeDataAboutDiet(updatedDataAboutDiet)
+            setDataAboutDiet(updatedDataAboutDiet)
+        }catch(error){
+            throw(error)
+        }
+    }
+
+    async function addOutDietCount(){
+        const updatedDataAboutDiet = { ...dataAboutDiet } 
+
+        updatedDataAboutDiet.currentSequenceOnDiet = 0 
+
+        updatedDataAboutDiet.mealsOutOfDiet += 1
+
+        updatedDataAboutDiet.totalRegisteredMeals += 1
+
+        updatedDataAboutDiet.percentageInDiet = Number((((updatedDataAboutDiet.mealsOnDiet) / updatedDataAboutDiet.totalRegisteredMeals) * 100).toFixed(2))
+
+        try{
+            storeDataAboutDiet(updatedDataAboutDiet)
+            setDataAboutDiet(updatedDataAboutDiet)
+        }catch(error){
+            throw(error)
+        }
+    }
+
+    async function removeOnDietCount() {
+        const updatedDataAboutDiet = { ...dataAboutDiet };
+
+        updatedDataAboutDiet.currentSequenceOnDiet -= 1;
+
+        updatedDataAboutDiet.mealsOnDiet -= 1;
+
+        updatedDataAboutDiet.totalRegisteredMeals -= 1;
+
+        updatedDataAboutDiet.percentageInDiet = Number((((updatedDataAboutDiet.mealsOnDiet) / updatedDataAboutDiet.totalRegisteredMeals) * 100).toFixed(2))
+
+        try {
+            storeDataAboutDiet(updatedDataAboutDiet);
+            setDataAboutDiet(updatedDataAboutDiet);
+        } catch(error) {
+            throw(error);
+        }
+    }
+
+    async function removeOutDietCount(){
+        const updatedDataAboutDiet = { ...dataAboutDiet } 
+
+        updatedDataAboutDiet.mealsOutOfDiet -= 1
+
+        updatedDataAboutDiet.totalRegisteredMeals -= 1
+
+        updatedDataAboutDiet.percentageInDiet = Number((((updatedDataAboutDiet.mealsOnDiet) / updatedDataAboutDiet.totalRegisteredMeals) * 100).toFixed(2))
+
+        try{
+            storeDataAboutDiet(updatedDataAboutDiet)
+            setDataAboutDiet(updatedDataAboutDiet)
+        }catch(error){
+            throw(error)
+        }
+    }
+
+    async function editDietData(mealToBeRemovedIsOnDiet : boolean, mealToBeAddedIsOnDiet : boolean){
+        //If mealOnDiet was not edited, it is not necessary to change anything
+        if (mealToBeRemovedIsOnDiet != mealToBeAddedIsOnDiet){
+            const updatedDataAboutDiet = { ...dataAboutDiet } 
+
+            //checks for remove data about removed meal
+            if(mealToBeRemovedIsOnDiet){
+                updatedDataAboutDiet.mealsOnDiet -= 1
+
+                updatedDataAboutDiet.totalRegisteredMeals -= 1
+
+                updatedDataAboutDiet.percentageInDiet = Number((((updatedDataAboutDiet.mealsOnDiet) / updatedDataAboutDiet.totalRegisteredMeals) * 100).toFixed(2))
+            }else{
+                updatedDataAboutDiet.mealsOutOfDiet -= 1
+
+                updatedDataAboutDiet.totalRegisteredMeals -= 1
+
+                updatedDataAboutDiet.percentageInDiet = Number((((updatedDataAboutDiet.mealsOnDiet) / updatedDataAboutDiet.totalRegisteredMeals) * 100).toFixed(2))
+            }
+
+            //checks for add data about added meal
+            if(mealToBeAddedIsOnDiet){
+                updatedDataAboutDiet.mealsOnDiet += 1
+
+                updatedDataAboutDiet.totalRegisteredMeals += 1
+
+                updatedDataAboutDiet.percentageInDiet = Number((((updatedDataAboutDiet.mealsOnDiet) / updatedDataAboutDiet.totalRegisteredMeals) * 100).toFixed(2))
+            }else{
+                updatedDataAboutDiet.mealsOutOfDiet += 1
+
+                updatedDataAboutDiet.totalRegisteredMeals += 1
+
+                updatedDataAboutDiet.percentageInDiet = Number((((updatedDataAboutDiet.mealsOnDiet) / updatedDataAboutDiet.totalRegisteredMeals) * 100).toFixed(2))
+            }
+
+            //try to set edited data
+            try{
+                storeDataAboutDiet(updatedDataAboutDiet)
+                setDataAboutDiet(updatedDataAboutDiet)
+            }catch(error){
+                throw(error)
+            }
         }
     }
 
     return(
         <MealListContext.Provider value={{
             mealList: list,
+            dataAboutDiet,
             loadList,
             addMeal,
             deleteMeal,

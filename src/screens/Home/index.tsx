@@ -20,7 +20,7 @@ export function Home(){
     const [isLoading, setIsLoading] = useState(true)
     const { COLORS, FONT_FAMILY, FONT_SIZE} = useTheme()
 
-    const { loadList } = useContext(MealListContext)
+    const { loadList, dataAboutDiet } = useContext(MealListContext)
 
     const { mealList } = useMealList()
 
@@ -59,7 +59,7 @@ export function Home(){
     return (
         <HomeContainer>  
             <HomeHeader />
-            <DietStatus value={60}/>
+            <DietStatus value={dataAboutDiet.percentageInDiet}/>
             <Text style={{
                 fontFamily: FONT_FAMILY.REGULAR,
                 fontSize: FONT_SIZE.MD,

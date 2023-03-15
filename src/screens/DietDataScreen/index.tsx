@@ -18,7 +18,14 @@ export function DietDataScreen(){
 
     const navigation = useNavigation()
 
-    const { resetDiet } = useContext(MealListContext)
+    const { resetDiet, dataAboutDiet } = useContext(MealListContext)
+
+    const { bestSequenceOndDiet, 
+      mealsOnDiet, 
+      mealsOutOfDiet, 
+      percentageInDiet, 
+      totalRegisteredMeals} 
+      = dataAboutDiet
 
     function handleReseteDietClick(){
       return Alert.alert(
@@ -50,9 +57,8 @@ export function DietDataScreen(){
     }
 
     return (  
-        //i have to work on this background later
-        <SafeAreaView style={{backgroundColor: COLORS.GREEN_LIGHT, flex: 1}}>
-          <DataHeader value={82.2}/>
+        <SafeAreaView style={{backgroundColor: percentageInDiet > 50 ? COLORS.GREEN_LIGHT : COLORS.RED_LIGHT, flex: 1}}>
+          <DataHeader value={percentageInDiet}/>
           <DietDataContainer>
             <Text style={{
               marginTop: 33, 
@@ -60,11 +66,11 @@ export function DietDataScreen(){
               fontSize: FONT_SIZE.MD,
             }}>Estátisticas Gerais</Text>
             <View style={{gap:12, marginTop:23}}>
-              <DataPanel value={22} description="melhor sequência de pratos dentro da dieta"/>
-              <DataPanel value={109} description="refeições registradas"/>
+              <DataPanel value={bestSequenceOndDiet} description="melhor sequência de pratos dentro da dieta"/>
+              <DataPanel value={totalRegisteredMeals} description="refeições registradas"/>
               <View style={{flexDirection: "row", gap: 12}}>
-                <SquarePanel value={32} description="refeições dentro da dieta"/>
-                <SquarePanel value={77} description="refeições fora da dieta" type="RED"/>         
+                <SquarePanel value={mealsOnDiet} description="refeições dentro da dieta"/>
+                <SquarePanel value={mealsOutOfDiet} description="refeições fora da dieta" type="RED"/>         
               </View>
             </View>
 
