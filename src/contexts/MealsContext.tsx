@@ -31,6 +31,7 @@ interface MealsListContextProps{
     addMeal: ({date, meals} : DateProps) => void,
     deleteMeal: (date : string, mealToBeRemoved : MealProps) => void,
     editMeal: (dateMealToBeDeleted: string, mealToBeDeleted: MealProps, dateMealToBeAdded: string, mealToBeAdded: MealProps) => void,
+    resetDiet: () => void,
 }
 
 export const MealListContext = createContext<MealsListContextProps>({} as MealsListContextProps)
@@ -294,6 +295,16 @@ export function MealsListContextProvider({children} : MealsListContextProviderPr
         }
     }
 
+    async function resetDiet(){
+        try{ 
+            const resetedList : DateProps[] = []
+            saveListChanges(resetedList)
+            setList(resetedList)
+        }catch(error){
+            throw(error)
+        }
+    }
+
     return(
         <MealListContext.Provider value={{
             mealList: list,
@@ -301,6 +312,7 @@ export function MealsListContextProvider({children} : MealsListContextProviderPr
             addMeal,
             deleteMeal,
             editMeal,
+            resetDiet,
         }}>
             {children}
         </MealListContext.Provider>
