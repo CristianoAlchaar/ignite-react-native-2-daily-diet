@@ -68,11 +68,17 @@ export function EditMealForm({date, meal}: EditMealFormProps){
                 isOnDiet: isOnDiet,
                 name: data.newName
             })
+            navigation.navigate('meal', {
+                date: data.newDate,
+                description: data.newDescription,
+                hour: data.newHour,
+                isOnDiet: isOnDiet,
+                name: data.newName,
+            })
         }catch(error){
             console.log(error)
             Alert.alert('Falha', 'Não foi possível modificar a refeição.')
         }
-        //navigation.navigate('meal', {description, hour, isOnDiet, name})
     }
 
     function handleYesSelect(){
