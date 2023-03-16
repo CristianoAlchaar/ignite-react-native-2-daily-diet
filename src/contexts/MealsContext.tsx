@@ -286,7 +286,7 @@ export function MealsListContextProvider({children} : MealsListContextProviderPr
             setList(updatedList)
 
             //UPDATE DataAboutDiet
-            mealToBeRemoved.isOnDiet ? removeOnDietCount() :  removeOutDietCount()
+            mealToBeRemoved.isOnDiet ? removeOnDietCount(date, mealToBeRemoved.hour) :  removeOutDietCount()
         }catch(error){
             throw error
         }
@@ -457,43 +457,66 @@ export function MealsListContextProvider({children} : MealsListContextProviderPr
 
         }
         
+        const dataAboutSequence = await calculateSequence()
+
         //check if the addedMealOutOfDiet is breaking the sequence
         if(currentSequenceDate !== undefined && addedConvertedDate!.getTime() > currentSequenceDate.getTime()){
             //find the current sequence
-            const dataAboutSequence = await calculateSequence()
-
-            console.log(dataAboutSequence)
-
             updatedDataAboutDiet.currentSequenceOnDiet = dataAboutSequence.currentSequence
             updatedDataAboutDiet.startCurrentSequenceDate = dataAboutSequence.sequenceStartDate
             updatedDataAboutDiet.startCurrentSequenceHour = dataAboutSequence.sequenceStartHour
         }  
+
+        updatedDataAboutDiet.lastMealOutOfDietDate = dataAboutSequence.lastMealDate
+        updatedDataAboutDiet.lastMealOutOfDietHour = dataAboutSequence.lastMealHour
 
         updatedDataAboutDiet.mealsOutOfDiet += 1
 
         updatedDataAboutDiet.totalRegisteredMeals += 1
 
         updatedDataAboutDiet.percentageInDiet = Number((((updatedDataAboutDiet.mealsOnDiet) / updatedDataAboutDiet.totalRegisteredMeals) * 100).toFixed(2))
-
+        
         try{
             storeDataAboutDiet(updatedDataAboutDiet)
             setDataAboutDiet(updatedDataAboutDiet)
+
         }catch(error){
             throw(error)
         }
     }
 
-    async function removeOnDietCount() {
-        const updatedDataAboutDiet = { ...dataAboutDiet };
+    async function removeOnDietCount(removedMealDate : string, removedMealTime: string) {
+        const updatedDataAboutDiet = { ...dataAboutDiet } 
 
-        updatedDataAboutDiet.currentSequenceOnDiet -= 1;
+        const removedConvertedDate = convertStringToDate(removedMealDate, removedMealTime)
+        
+        const currentSequenceDate = convertStringToDate(dataAboutDiet.startCurrentSequenceDate, dataAboutDiet.startCurrentSequenceHour)
+
+        //check if there is a sequence
+        if(currentSequenceDate != undefined){
+            //check if its the sequence's beginning
+            if(removedConvertedDate!.getTime() ===  currentSequenceDate.getTime()){
+                const dataAboutSequence = await calculateSequence()
+
+                updatedDataAboutDiet.currentSequenceOnDiet = dataAboutSequence.currentSequence
+                updatedDataAboutDiet.startCurrentSequenceDate = dataAboutSequence.sequenceStartDate
+                updatedDataAboutDiet.startCurrentSequenceHour = dataAboutSequence.sequenceStartHour
+            }else{
+                //check if removed is on sequence
+                if(removedConvertedDate!.getTime() >  currentSequenceDate.getTime()){
+
+                    updatedDataAboutDiet.currentSequenceOnDiet -= 1;
+
+                }
+            }  
+        }
 
         updatedDataAboutDiet.mealsOnDiet -= 1;
 
         updatedDataAboutDiet.totalRegisteredMeals -= 1;
 
         updatedDataAboutDiet.percentageInDiet = Number((((updatedDataAboutDiet.mealsOnDiet) / updatedDataAboutDiet.totalRegisteredMeals) * 100).toFixed(2))
-
+        
         try {
             storeDataAboutDiet(updatedDataAboutDiet);
             setDataAboutDiet(updatedDataAboutDiet);
@@ -505,6 +528,20 @@ export function MealsListContextProvider({children} : MealsListContextProviderPr
     async function removeOutDietCount(){
         const updatedDataAboutDiet = { ...dataAboutDiet } 
 
+        const dataAboutSequence = await calculateSequence()
+        
+        updatedDataAboutDiet.currentSequenceOnDiet = dataAboutSequence.currentSequence
+        updatedDataAboutDiet.startCurrentSequenceDate = dataAboutSequence.sequenceStartDate
+        updatedDataAboutDiet.startCurrentSequenceHour = dataAboutSequence.sequenceStartHour
+            
+        updatedDataAboutDiet.lastMealOutOfDietDate = dataAboutSequence.lastMealDate
+        updatedDataAboutDiet.lastMealOutOfDietHour = dataAboutSequence.lastMealHour
+
+        //if current sequence becomes greater than bestSequence, than set it as bestSequence
+        if(updatedDataAboutDiet.currentSequenceOnDiet > updatedDataAboutDiet.bestSequenceOndDiet){
+            updatedDataAboutDiet.bestSequenceOndDiet = updatedDataAboutDiet.currentSequenceOnDiet
+        }
+        
         updatedDataAboutDiet.mealsOutOfDiet -= 1
 
         updatedDataAboutDiet.totalRegisteredMeals -= 1
@@ -554,6 +591,20 @@ export function MealsListContextProvider({children} : MealsListContextProviderPr
                 updatedDataAboutDiet.percentageInDiet = Number((((updatedDataAboutDiet.mealsOnDiet) / updatedDataAboutDiet.totalRegisteredMeals) * 100).toFixed(2))
             }
 
+            //calculate sequence
+            const dataAboutSequence = await calculateSequence()
+           
+            updatedDataAboutDiet.currentSequenceOnDiet = dataAboutSequence.currentSequence
+            updatedDataAboutDiet.startCurrentSequenceDate = dataAboutSequence.sequenceStartDate
+            updatedDataAboutDiet.startCurrentSequenceHour = dataAboutSequence.sequenceStartHour
+            updatedDataAboutDiet.lastMealOutOfDietDate = dataAboutSequence.lastMealDate
+            updatedDataAboutDiet.lastMealOutOfDietHour = dataAboutSequence.lastMealHour
+
+            //check if current sequence is greather than best sequence
+            if(updatedDataAboutDiet.currentSequenceOnDiet > updatedDataAboutDiet.bestSequenceOndDiet){
+                updatedDataAboutDiet.bestSequenceOndDiet = updatedDataAboutDiet.currentSequenceOnDiet
+            }
+
             //try to set edited data
             try{
                 storeDataAboutDiet(updatedDataAboutDiet)
@@ -570,15 +621,21 @@ export function MealsListContextProvider({children} : MealsListContextProviderPr
         let mealsOnDiet = 0;
         let sequenceStartDate = "";
         let sequenceStartHour = "";
+        let lastMealDate = "";
+        let lastMealHour = "";
 
         for (const date of list) {
             sequenceStartDate = date.date
           for (const meal of date.meals) {
             if (!meal.isOnDiet) {
+                lastMealDate = date.date
+                lastMealHour = meal.hour
               return {
                 currentSequence: mealsOnDiet,
                 sequenceStartDate: sequenceStartDate,
                 sequenceStartHour: sequenceStartHour,
+                lastMealDate: lastMealDate,
+                lastMealHour: lastMealHour,
               }
             }
             mealsOnDiet++
@@ -590,6 +647,8 @@ export function MealsListContextProvider({children} : MealsListContextProviderPr
             currentSequence: mealsOnDiet,
             sequenceStartDate: sequenceStartDate,
             sequenceStartHour: sequenceStartHour,
+            lastMealDate: "",
+            lastMealHour: "",
         }
     }
     

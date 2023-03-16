@@ -196,7 +196,7 @@ export function EditMealForm({date, meal}: EditMealFormProps){
                 flex: 1,
                 flexDirection: 'column-reverse',
             }}>
-                <BlackButton value='Cadastrar Refeição' handlePress={handleSubmit(submitMeal)}/>
+                <BlackButton value='Salvar Alterações' handlePress={handleSubmit(submitMeal)}/>
             </View>
         </FormContainer>
     )
