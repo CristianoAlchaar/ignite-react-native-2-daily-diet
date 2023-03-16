@@ -14,6 +14,10 @@ export async function getDataAboutDiet() {
             mealsOutOfDiet: 0,
             percentageInDiet: 0,
             totalRegisteredMeals: 0,
+            startCurrentSequenceDate: "",
+            startCurrentSequenceHour: "",
+            lastMealOutOfDietDate: "",
+            lastMealOutOfDietHour: "",
         }
 
         return data

@@ -8,6 +8,8 @@ import { storeMealList } from "./../storage/mealList/storeMealList"
 import { getDataAboutDiet } from "./../storage/dataAboutDiet/getDataAboutDiet"
 import { storeDataAboutDiet } from "./../storage/dataAboutDiet/storeDataAboutDiet"
 
+import { convertStringToDate } from '../lib/convertStringToDate'
+
 export interface MealProps {
     hour: string,
     name: string,
@@ -31,6 +33,10 @@ interface MealsListContextProviderProps {
 export interface DataAboutDietProps{
     percentageInDiet: number,
     currentSequenceOnDiet: number,
+    startCurrentSequenceDate: string,
+    startCurrentSequenceHour: string,
+    lastMealOutOfDietDate: string,
+    lastMealOutOfDietHour: string,
     bestSequenceOndDiet: number,
     totalRegisteredMeals: number,
     mealsOnDiet: number,
@@ -155,6 +161,10 @@ export function MealsListContextProvider({children} : MealsListContextProviderPr
         mealsOutOfDiet: 0,
         percentageInDiet: 0,
         totalRegisteredMeals: 0,
+        startCurrentSequenceDate: "",
+        startCurrentSequenceHour: "",
+        lastMealOutOfDietDate: "",
+        lastMealOutOfDietHour: "",
     })
     
     async function loadList(){
@@ -172,7 +182,7 @@ export function MealsListContextProvider({children} : MealsListContextProviderPr
         }
     }
 
-    async function addMeal({date, meals} : DateProps){ 
+    function addMeal({date, meals} : DateProps){ 
 
         const existingDayIndex = list.findIndex((day) => day.date === date); 
         
@@ -186,7 +196,7 @@ export function MealsListContextProvider({children} : MealsListContextProviderPr
 
                 sortMealsOnDay(existingDayIndex, updatedList)
                 
-                meals[0].isOnDiet ? addOnDietCount() : addOutDietCount()
+                meals[0].isOnDiet ? addOnDietCount(date, meals[0].hour) : addOutDietCount(date, meals[0].hour)
     
             } else{
                 const newDay = { date, meals }
@@ -194,7 +204,7 @@ export function MealsListContextProvider({children} : MealsListContextProviderPr
             
                 sortDailyList(updatedList)
 
-                meals[0].isOnDiet ? addOnDietCount() : addOutDietCount()
+                meals[0].isOnDiet ? addOnDietCount(date, meals[0].hour) : addOutDietCount(date, meals[0].hour)
             } 
         } catch(error){
             throw error
@@ -221,8 +231,8 @@ export function MealsListContextProvider({children} : MealsListContextProviderPr
             meals: listToOrder[index].meals.sort((a, b) => {
                 //This value 2000-01-01T doesnt matter, 
                 //its just used so i can create a Date and check wich one came first
-                const timeA = new Date(`2000-01-01T${a.hour}`)
-                const timeB = new Date(`2000-01-01T${b.hour}`)
+                const timeA : Date = new Date(`2000-01-01T${a.hour}`)
+                const timeB : Date = new Date(`2000-01-01T${b.hour}`)
                 return timeB.getTime() - timeA.getTime()
             }),
           }
@@ -333,7 +343,7 @@ export function MealsListContextProvider({children} : MealsListContextProviderPr
         }
     }
 
-    async function resetDiet(){
+    function resetDiet(){
         try{ 
             const resetedList : DateProps[] = []
             const resetedData : DataAboutDietProps = {
@@ -343,6 +353,10 @@ export function MealsListContextProvider({children} : MealsListContextProviderPr
                 mealsOutOfDiet: 0,
                 percentageInDiet: 0,
                 totalRegisteredMeals: 0,
+                startCurrentSequenceDate: "",
+                startCurrentSequenceHour: "",
+                lastMealOutOfDietDate: "",
+                lastMealOutOfDietHour: "",
             }
 
             saveListChanges(resetedList)
@@ -356,11 +370,48 @@ export function MealsListContextProvider({children} : MealsListContextProviderPr
         }
     }
 
-    async function addOnDietCount(){
+    function addOnDietCount(addedMealDate : string, addedMealTime: string){
+      
         const updatedDataAboutDiet = { ...dataAboutDiet } 
 
-        updatedDataAboutDiet.currentSequenceOnDiet += 1 
+        const addedConvertedDate = convertStringToDate(addedMealDate, addedMealTime)
+        
+        const currentSequenceDate = convertStringToDate(dataAboutDiet.startCurrentSequenceDate, dataAboutDiet.startCurrentSequenceHour)
 
+        const convertedToDateLastMealOutOfDiet = convertStringToDate(dataAboutDiet.lastMealOutOfDietDate, dataAboutDiet.lastMealOutOfDietHour)
+
+        //check if there is a current sequence
+        if(currentSequenceDate != undefined){
+            //check if addedMeal is inside the current sequence
+            if(addedConvertedDate!.getTime() >=  currentSequenceDate.getTime()){
+                //is inside the current sequence
+                updatedDataAboutDiet.currentSequenceOnDiet += 1
+            }else{
+                //check if addedMeal coming before the last Meal out of diet or
+                //if its undefined it means there is no mealOutOfDiet but it comes 
+                //before the lastMealOnDiet, so it has to update the current sequence start
+                if(convertedToDateLastMealOutOfDiet == undefined || 
+                    addedConvertedDate!.getTime() >= convertedToDateLastMealOutOfDiet.getTime()){
+
+                        updatedDataAboutDiet.currentSequenceOnDiet += 1
+
+                        updatedDataAboutDiet.startCurrentSequenceDate = addedMealDate
+
+                        updatedDataAboutDiet.startCurrentSequenceHour = addedMealTime
+                }
+            }
+        }
+
+        //if there isnt a current sequence, create one
+        else{
+            updatedDataAboutDiet.currentSequenceOnDiet = 1
+
+            updatedDataAboutDiet.startCurrentSequenceDate = addedMealDate
+
+            updatedDataAboutDiet.startCurrentSequenceHour = addedMealTime
+        }
+        
+        //check if the current sequence is greater than best sequence
         if(updatedDataAboutDiet.currentSequenceOnDiet > updatedDataAboutDiet.bestSequenceOndDiet){
             updatedDataAboutDiet.bestSequenceOndDiet = updatedDataAboutDiet.currentSequenceOnDiet
         }  
@@ -379,10 +430,44 @@ export function MealsListContextProvider({children} : MealsListContextProviderPr
         }
     }
 
-    async function addOutDietCount(){
+    async function addOutDietCount(addedMealDate : string, addedMealTime: string){
         const updatedDataAboutDiet = { ...dataAboutDiet } 
 
-        updatedDataAboutDiet.currentSequenceOnDiet = 0 
+        const addedConvertedDate = convertStringToDate(addedMealDate, addedMealTime)
+        
+        const currentSequenceDate = convertStringToDate(dataAboutDiet.startCurrentSequenceDate, dataAboutDiet.startCurrentSequenceHour)
+
+        const convertedToDateLastMealOutOfDiet = convertStringToDate(dataAboutDiet.lastMealOutOfDietDate, dataAboutDiet.lastMealOutOfDietHour)
+
+        //check if there is a last meal out of diet
+        if(convertedToDateLastMealOutOfDiet !== undefined){
+            //check if addedMeal is coming after the lastMealDateOutOfDate
+            if(addedConvertedDate!.getTime() >=  convertedToDateLastMealOutOfDiet.getTime()){
+                //it comes after lastMealDateOutOfDate known
+                updatedDataAboutDiet.lastMealOutOfDietDate = addedMealDate
+
+                updatedDataAboutDiet.lastMealOutOfDietHour = addedMealTime
+            }    
+        }
+        //if there isnt a ast meal out of diet, create one
+        else{
+            updatedDataAboutDiet.lastMealOutOfDietDate = addedMealDate
+
+            updatedDataAboutDiet.lastMealOutOfDietHour = addedMealTime
+
+        }
+        
+        //check if the addedMealOutOfDiet is breaking the sequence
+        if(currentSequenceDate !== undefined && addedConvertedDate!.getTime() > currentSequenceDate.getTime()){
+            //find the current sequence
+            const dataAboutSequence = await calculateSequence()
+
+            console.log(dataAboutSequence)
+
+            updatedDataAboutDiet.currentSequenceOnDiet = dataAboutSequence.currentSequence
+            updatedDataAboutDiet.startCurrentSequenceDate = dataAboutSequence.sequenceStartDate
+            updatedDataAboutDiet.startCurrentSequenceHour = dataAboutSequence.sequenceStartHour
+        }  
 
         updatedDataAboutDiet.mealsOutOfDiet += 1
 
@@ -479,6 +564,35 @@ export function MealsListContextProvider({children} : MealsListContextProviderPr
         }
     }
 
+    async function calculateSequence(){
+        const list = await getMealsList()
+
+        let mealsOnDiet = 0;
+        let sequenceStartDate = "";
+        let sequenceStartHour = "";
+
+        for (const date of list) {
+            sequenceStartDate = date.date
+          for (const meal of date.meals) {
+            if (!meal.isOnDiet) {
+              return {
+                currentSequence: mealsOnDiet,
+                sequenceStartDate: sequenceStartDate,
+                sequenceStartHour: sequenceStartHour,
+              }
+            }
+            mealsOnDiet++
+            sequenceStartHour = meal.hour
+          }
+        }
+      
+        return {
+            currentSequence: mealsOnDiet,
+            sequenceStartDate: sequenceStartDate,
+            sequenceStartHour: sequenceStartHour,
+        }
+    }
+    
     return(
         <MealListContext.Provider value={{
             mealList: list,
